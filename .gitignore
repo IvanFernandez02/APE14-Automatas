@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.env
+
+# Angular / Node
+front/node_modules/
+front/dist/
+front/.angular/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Java
+*.class
+back/app/infrastructure/java_semantic/target/
+
+# IDEs / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store

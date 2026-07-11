@@ -1,0 +1,232 @@
+<main class="shell">
+  <section class="hero card">
+    <div>
+      <p class="eyebrow">Compilador de ecuaciones</p>
+      <h1>Analiza, depura y visualiza ecuaciones de primer grado.</h1>
+      <p class="lede">
+        Escribe una ecuación, elige tu modelo local de Ollama y revisa tokens,
+        árbol sintáctico y tiempos de análisis en una sola vista.
+      </p>
+    </div>
+
+    <div class="hero-stats">
+      <article>
+        <strong>{{ resumen.tokens }}</strong>
+        <span>tokens</span>
+      </article>
+      <article>
+        <strong>{{ resumen.errores }}</strong>
+        <span>errores</span>
+      </article>
+      <article>
+        <strong>{{ totalMs | number:'1.0-2' }} ms</strong>
+        <span>total</span>
+      </article>
+    </div>
+  </section>
+
+  <section class="workspace">
+    <div class="card editor">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Entrada</p>
+          <h2>Prueba tu ecuación</h2>
+        </div>
+        <span class="chip">FastAPI + Angular</span>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="analizar()" class="form-grid">
+        <label class="field field-full">
+          <span>Ecuación o frase</span>
+          <textarea
+            formControlName="entrada"
+            rows="6"
+            placeholder="Ejemplo: 2x - 3 = x + 1"
+          ></textarea>
+        </label>
+
+        <label class="field">
+          <span>Modelo Ollama</span>
+          <select formControlName="modelo_llm" [disabled]="cargandoModelos">
+            <option *ngFor="let modelo of modelosDisponibles" [value]="modelo">
+              {{ modelo }}
+            </option>
+          </select>
+        </label>
+
+        <div class="actions">
+          <button class="primary" type="submit" [disabled]="cargando || form.invalid">
+            {{ cargando ? 'Analizando...' : 'Analizar ecuación' }}
+          </button>
+          <button class="secondary" type="button" (click)="limpiar()">Limpiar</button>
+        </div>
+      </form>
+
+      <div class="examples">
+        <button
+          type="button"
+          class="example"
+          *ngFor="let ejemplo of ejemplos"
+          (click)="cargarEjemplo(ejemplo.value)"
+        >
+          {{ ejemplo.label }}
+        </button>
+      </div>
+
+      <p class="inline-error" *ngIf="errorMensaje">{{ errorMensaje }}</p>
+    </div>
+
+    <section class="results" *ngIf="resultado">
+      <div class="results-grid">
+
+      <!-- PANEL DE SOLUCIÓN PASO A PASO -->
+      <article class="card panel solution-panel" style="grid-column: 1 / -1;" *ngIf="resultado.pasos_solucion && resultado.pasos_solucion.length">
+        <div class="solution-content">
+          <p class="eyebrow">Desglose de la Solución</p>
+          <ul class="solution-steps">
+            <li *ngFor="let paso of resultado.pasos_solucion; let last = last; let i = index" [class.final-result]="last">
+              <span class="step-number" *ngIf="!last">Paso {{ i + 1 }}:</span>
+              <span class="step-math">{{ paso }}</span>
+            </li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- Tokens y errores -->
+      <article class="card panel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Resultado</p>
+            <h2>Tokens y errores</h2>
+          </div>
+        </div>
+
+        <div class="list-block" *ngIf="resultado; else emptyResult">
+          <div class="list-section">
+            <h3>Tokens</h3>
+            <div class="token-cloud" *ngIf="resultado.tokens.length; else noTokens">
+              <span class="token" *ngFor="let token of resultado.tokens">
+                <strong>{{ token.tipo }}</strong>
+                <small>{{ token.valor }}</small>
+                <em>{{ token.fuente }}</em>
+              </span>
+            </div>
+          </div>
+
+          <div class="list-section">
+            <h3>Errores</h3>
+            <div class="error-list" *ngIf="resultado.errores.length; else noErrors">
+              <article class="error-item" *ngFor="let error of resultado.errores">
+                <div class="error-top">
+                  <strong>{{ error.fase }}</strong>
+                  <span>{{ error.token || 'sin token' }}</span>
+                </div>
+                <p>{{ error.causa }}</p>
+                <small>{{ error.sugerencia }}</small>
+              </article>
+            </div>
+          </div>
+
+          <div class="list-section">
+            <h3>Reglas Semánticas (Java)</h3>
+            <div class="rules-list" *ngIf="reglasSemanticas?.evaluado; else noEvaluado">
+              <article class="rule-item" *ngFor="let regla of reglasSemanticas?.reglas" [class.success]="regla.cumple" [class.error]="!regla.cumple">
+                <div class="rule-icon">
+                  <span *ngIf="regla.cumple">✅</span>
+                  <span *ngIf="!regla.cumple">❌</span>
+                </div>
+                <div class="rule-content">
+                  <strong>{{ regla.nombre }}</strong>
+                  <small>{{ regla.descripcion }}</small>
+                </div>
+              </article>
+            </div>
+            <ng-template #noEvaluado>
+              <p class="empty-state warn">⚠️ Fase semántica no evaluada (se detuvo en el lexer/parser).</p>
+            </ng-template>
+          </div>
+        </div>
+
+        <ng-template #emptyResult>
+          <p class="empty-state">Aún no has ejecutado un análisis.</p>
+        </ng-template>
+
+        <ng-template #noTokens>
+          <p class="empty-state">No se generaron tokens.</p>
+        </ng-template>
+
+        <ng-template #noErrors>
+          <p class="empty-state ok">No hay errores reportados.</p>
+        </ng-template>
+      </article>
+
+      <article class="card panel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Análisis</p>
+            <h2>Árbol y tiempos</h2>
+          </div>
+        </div>
+
+        <div class="details-grid" *ngIf="resultado; else emptyDetails">
+          <div>
+            <h3>Árbol sintáctico</h3>
+            <pre>{{ resultado.arbol_sintactico | json }}</pre>
+          </div>
+
+          <div>
+            <h3>Tiempos</h3>
+            <dl class="timings">
+              <div><dt>Total</dt><dd>{{ resultado.tiempos.total_ms | number:'1.0-2' }} ms</dd></div>
+              <div><dt>Lexer</dt><dd>{{ resultado.tiempos.lexer_ms | number:'1.0-2' }} ms</dd></div>
+              <div><dt>Parser</dt><dd>{{ resultado.tiempos.parser_ms | number:'1.0-2' }} ms</dd></div>
+              <div><dt>Semántica</dt><dd>{{ resultado.tiempos.semantic_ms | number:'1.0-2' }} ms</dd></div>
+              <div><dt>LLM</dt><dd>{{ resultado.tiempos.llm_ms | number:'1.0-2' }} ms</dd></div>
+            </dl>
+          </div>
+        </div>
+
+        <ng-template #emptyDetails>
+          <p class="empty-state">El árbol y los tiempos aparecerán después de analizar.</p>
+        </ng-template>
+      </article>
+
+      <article class="card panel" style="grid-column: 1 / -1;">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Semántica</p>
+            <h2>Tabla de Símbolos</h2>
+          </div>
+        </div>
+        
+        <div class="table-container" *ngIf="tablaSimbolos; else noSimbolos">
+          <table class="symbol-table">
+            <thead>
+              <tr>
+                <th>Símbolo</th>
+                <th>Tipo</th>
+                <th>Coeficiente</th>
+                <th>Exponente</th>
+                <th>Ubicación</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let sim of tablaSimbolos">
+                <td><strong>{{ sim.id }}</strong></td>
+                <td><span class="badge" [class.var]="sim.tipo === 'Variable'">{{ sim.tipo }}</span></td>
+                <td>{{ sim.coeficiente !== null ? sim.coeficiente : '-' }}</td>
+                <td>{{ sim.exponente !== null ? sim.exponente : '-' }}</td>
+                <td>{{ sim.ubicacion }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <ng-template #noSimbolos>
+          <p class="empty-state">No se ha podido generar la tabla de símbolos (esperando análisis exitoso).</p>
+        </ng-template>
+      </article>
+    </div>
+  </section>
+</section>
+</main>
