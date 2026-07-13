@@ -19,9 +19,21 @@ class RegexLexer(LexerPort):
     ]
 
     FRAGMENTOS_NL: tuple[str, ...] = (
-        "es igual a", "igual a", "más", "mas", "menos",
-        "resta", "suma", "por", "veces", "multiplicado",
-        "dividido", "entre", "partido", "añade", "quita",
+        "es igual a", 
+        "igual a", 
+        "más", 
+        "mas", 
+        "menos",
+        "resta", 
+        "suma", 
+        "por", 
+        "veces", 
+        "multiplicado",
+        "dividido", 
+        "entre", 
+        "partido", 
+        "añade", 
+        "quita",
     )
 
     def __init__(self):
