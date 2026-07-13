@@ -8,7 +8,7 @@ class AnalyzeRequest(BaseModel):
         examples=["2x más 5 es igual a 13"],
     )
     modelo_llm: str = Field(
-        default="llama3.2:3b",
+        default="qwen2.5-coder:3b",
         description="Nombre del modelo local de Ollama, por ejemplo: llama3.2:3b",
     )
 

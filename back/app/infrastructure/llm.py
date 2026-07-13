@@ -87,7 +87,7 @@ class LLMClient(ABC):
 
 
 class OllamaClient(LLMClient):
-    def __init__(self, model="llama3.2:3b", host="http://localhost:11434/api/generate"):
+    def __init__(self, model="qwen2.5-coder:3b", host="http://localhost:11434/api/generate"):
         self.model = model
         self.host = host
 
@@ -124,7 +124,7 @@ class LLMAdapter(LLMPort):
         return self._client.generate(prompt)
 
 
-def create_llm(modelo: str = "llama3.2:3b") -> LLMPort:
+def create_llm(modelo: str = "qwen2.5-coder:3b") -> LLMPort:
     return LLMAdapter(OllamaClient(model=modelo))
 
 

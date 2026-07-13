@@ -22,23 +22,19 @@ export class AppComponent {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly api = inject(CompilerApiService);
 
-  readonly fallbackModelos = ['llama3.2:3b', 'mistral:latest', 'llama3:latest'];
+  readonly fallbackModelos = ['qwen2.5-coder:3b', 'mistral:latest', 'llama3:latest'];
   modelosDisponibles: string[] = [...this.fallbackModelos];
   cargandoModelos = false;
 
   readonly form = this.fb.group({
     entrada: this.fb.control('2x - 3 = x + 1', [Validators.required, Validators.minLength(1)]),
-    modelo_llm: this.fb.control('llama3.2:3b', [Validators.required, Validators.minLength(1)])
+    modelo_llm: this.fb.control('qwen2.5-coder:3b', [Validators.required, Validators.minLength(1)])
   });
 
   readonly ejemplos: ExampleCase[] = [
-    { label: '✅ Válido (Símbolos)', value: '5x - 8 = 23' },
     { label: '✅ Válido (Texto)', value: '2x más 3 es igual a 15' },
-    { label: '❌ Err. Léxico (Símbolos)', value: '2y + 5 = 13' },
     { label: '❌ Err. Léxico (Texto)', value: '2x patata 5 es igual a 13' },
-    { label: '❌ Err. Sintáctico (Símbolos)', value: '5x - = 23' },
     { label: '❌ Err. Sintáctico (Texto)', value: '2x más es igual a 15' },
-    { label: '❌ Err. Semántico (Símbolos)', value: 'x ^ 2 = 16' },
     { label: '❌ Err. Semántico (Texto)', value: 'x elevado a 2 es igual a 16' }
   ];
 
@@ -63,7 +59,7 @@ export class AppComponent {
 
   get reglasSemanticas() {
     if (!this.resultado) return null;
-    
+
     // Si se encontraron errores léxicos o sintácticos, Java nunca llegó a ejecutarse.
     if (this.resultado.tiempos.semantic_ms === 0 && this.resultado.errores.some(e => e.fase !== 'semantic')) {
       return { evaluado: false, reglas: [] };

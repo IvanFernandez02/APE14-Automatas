@@ -61,6 +61,8 @@ public class SemanticAnalyzer {
             return errors;
         }
 
+
+        // REGLA 1: Validar que el lado izquierdo no esté vacío
         if (ast.izquierda == null || ast.izquierda.terminos == null || ast.izquierda.terminos.isEmpty()) {
             errors.add(new CompilerError(
                     "semantic", "",
@@ -69,6 +71,8 @@ public class SemanticAnalyzer {
             ));
         }
 
+
+        // REGLA 2: Validar que el lado derecho no esté vacío
         if (ast.derecha == null || ast.derecha.terminos == null || ast.derecha.terminos.isEmpty()) {
             errors.add(new CompilerError(
                     "semantic", "",
@@ -89,6 +93,8 @@ public class SemanticAnalyzer {
             }
         }
 
+
+        // REGLA 3: La ecuación debe tener un único signo '='
         if (tokens != null) {
             int eqCount = 0;
             for (TokenNode token : tokens) {
@@ -112,6 +118,8 @@ public class SemanticAnalyzer {
         if (term.factores == null) return;
         
         for (FactorNode factor : term.factores) {
+
+            // REGLA 4: Solo se permite usar la variable 'x'
             if ("variable".equals(factor.tipo) && !"x".equals(factor.valor)) {
                 errors.add(new CompilerError(
                         "semantic", factor.valor,
@@ -119,6 +127,9 @@ public class SemanticAnalyzer {
                         "Use 'x' como única variable."
                 ));
             }
+
+
+            // REGLA 5: La ecuación debe ser de primer grado (exponente <= 1)
             if ("variable".equals(factor.tipo) && factor.exponente > 1) {
                 errors.add(new CompilerError(
                         "semantic", "^" + factor.exponente,
